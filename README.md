@@ -67,4 +67,4 @@ sudo make instal
 ```
 
 # 4. Usage Guide
-See web/index.htm
+See web/index.htm or https://wujiazheng2020a.github.io/hyper_graph_ros/
