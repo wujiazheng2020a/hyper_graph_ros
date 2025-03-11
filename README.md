@@ -16,23 +16,23 @@ In the program, for the sake of convenience, it is simplified as **tros**. Where
 }
 ```
 
-## 3. Installation Steps:
+# 3. Installation Steps:
 
-### 3.1 Installation of other libraries
+## 3.1 Installation of other libraries
 ```bash
 sudo apt-get update
 sudo apt-get install -y libgoogle-glog-dev libgtest-dev libyaml-cpp-dev libeigen3-dev doxygen protobuf-compiler libprotobuf-dev libzmq3-dev
 ```
 
-### 3.2 Installation of TBB
+## 3.2 Installation of TBB
 ```bash
 git clone git@github.com:oneapi-src/oneTBB.git
 ```
-#### 3.2.1 Navigate to the project folder
+### 3.2.1 Navigate to the project folder
 ```bash
 cd oneTBB
 ```
-#### 3.2.2 Build
+### 3.2.2 Build
 ```bash
 mkdir build
 cd build
@@ -45,15 +45,15 @@ Choose the number of threads after 'j' based on the environment, ensuring memory
 sudo make install
 ```
 
-### 3.3 HyperGraph ROS? Installation
+## 3.3 HyperGraph ROS Installation
 ```bash
 git clone https://github.com/wujiazheng2020a/hyper_graph_ros.git
 ```
-#### 3.3.1 Navigate to the project folder
+### 3.3.1 Navigate to the project folder
 ```bash
 cd tros
 ```
-#### 3.3.2 Build
+### 3.3.2 Build
 ```bash
 mkdir build
 cd build
@@ -65,3 +65,6 @@ Choose the number of threads after 'j' based on the environment, ensuring memory
 ```bash
 sudo make instal
 ```
+
+# 4. Usage Guide
+See web/guide.htm
