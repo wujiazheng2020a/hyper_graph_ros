@@ -67,4 +67,4 @@ sudo make instal
 ```
 
 # 4. Usage Guide
-See web/guide.htm
+See web/index.htm
