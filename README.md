@@ -45,7 +45,7 @@ Choose the number of threads after 'j' based on the environment, ensuring memory
 sudo make install
 ```
 
-### 3.3 TROS Installation
+### 3.3 HyperGraph ROS? Installation
 ```bash
 git clone https://github.com/wujiazheng2020a/hyper_graph_ros.git
 ```

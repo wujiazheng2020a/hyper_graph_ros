@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HyperGraph ROS Documentation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f8fafa;
+        }
+        h1, h2, h3 {
+            color: #343a40;
+        }
+        pre {
+            background-color: black;
+            color: #00ff00;
+        }
+
+        code {
+            background-color: black;
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>HyperGraph ROS Documentation</h1>
+
+    <h2>1. Hello World</h2>
+    <p>The following describes how to write a simple program for in-process communication and parallel computing.</p>
+
+    <pre><code>#include "tros_base/tros_base.h"
+
+int main() {
+    // 1. Initialize the tros component
+    tros::tros_base::TROSInit("", "", "", 0);
+
+    // 2. Subscribe to shared_channel, whose data type is shared_ptr<int>
+    tros::tros_base::FromGraph<std::shared_ptr<int>>(
+        "shared_channel", tros::tros_base::kWaitLastFinish,
+        [](const std::shared_ptr<int> &data) {
+            std::cout << "shared_channel:" << *data << std::endl;
+        });
+
+    // 3. Send data
+    for (size_t i = 0; i < 10; ++i) {
+        tros::tros_base::ToGraph("shared_channel", std::make_shared<int>(88));
+    }
+
+    // 4. Wait for 1s to end all threads
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    tros::tros_base::DataGraph::Instance().CancelAndWaitFinish();
+}
+    </code></pre>
+
+    <p>With the code above, we can print <code>"shared_channel:88"</code> in the callback function in step 2.</p>
+
+    <h3>Explanation</h3>
+    <ul>
+        <li><code>FromGraph</code>, <code>ToGraph</code>, <code>TROSInit</code>, and <code>tros::tros_base::DataGraph::Instance().CancelAndWaitFinish()</code> are all static functions, so they can be called directly without declaring objects.</li>
+        <li><code>"shared_channel"</code> is the channel name. Each piece of data is sent on different channels, enabling the corresponding subscriber to process it.</li>
+        <li><code>tros::tros_base::kWaitLastFinish</code> ensures that callbacks are executed sequentially. If changed to <code>tros::tros_base::kParallelInvoke</code>, callbacks run in parallel.</li>
+    </ul>
+
+    <h2>2. TransformationTree (TF)</h2>
+    <p>This structure is used to maintain a transformation tree of various frames.</p>
+
+    <pre><code>int main() {
+    // 1. Initialize the tros component
+    tros::tros_base::TROSInit("", "", "", 0);
+
+    // 2. Update the TF Tree
+    tros::tros_base::ToTF({100, "base_frame", "A", tf_translation});
+
+    // 3. Retrieve the latest TF information
+    auto tf_frame = tros::tros_base::FromTF("base_frame", "D");
+}
+    </code></pre>
+
+    <h3>Explanation</h3>
+    <ul>
+        <li><code>ToTF</code> takes four parameters: timestamp, parent frame name, current frame name, and the transformation matrix.</li>
+        <li><code>FromTF</code> retrieves the transformation matrix of <code>current_frame</code> relative to <code>parent_frame</code>.</li>
+        <li>This API does not publish TF to the network outside the process.</li>
+    </ul>
+
+    <h2>3. Parameter Server</h2>
+    <p>The parameter server reads configurations from a YAML file at program initialization.</p>
+
+    <h3>Example Parameter File (param_file.yaml)</h3>
+    <pre><code>profile:
+  name: wujiazheng
+  sex: male
+  car_id:
+    level1: 122
+    level2: 233
+sensor: imu
+author: wujiazheng
+    </code></pre>
+
+    <h3>Initializing with Parameters</h3>
+    <pre><code>tros::tros_base::TROSInit("config/param_file.yaml", "", "", 0);
+    </code></pre>
+
+    <h3>Accessing Parameters</h3>
+    <pre><code>const auto &my_name = tros::tros_base::Params()["profile"]["name"].as<std::string>();
+const auto &car1 = tros::tros_base::Params()["profile"]["car_id"]["level1"].as<int>();
+    </code></pre>
+
+    <h2>4. Unified Communication Interface</h2>
+    <h3>4.1 Basic Configuration</h3>
+    <p>These inferfaces is used to unify communication within and outside the process. It requires reading the corresponding yaml files. Let's assume we have two robots, where the 'Global Optimization Node' of robot1 needs to be completed by robot2. Here's the schematic:        :</p>
+    <img src="unified_api_over.png" alt="Example of the case" width="700" height="400">
+    <p>1. To configure robot1, it needs to disable local sending of pre_channel, set up pre_channel to send externally and receive the external ba_channel. The modified files are as follows:</p>
+    <p>1.1 network_bridge.yaml:</p>
+    <img src="network_bridge_yaml.png" alt="Example of the network">
+    <p>1.2 data_graph.yaml:</p>
+    <img src="network_bridge_yaml.png" alt="Example of the data_graph">
+
+    <p>2. For robot2, it needs to disable local sending for pre_channel and ba_channel, configure ba_channel to send externally and receive the external pre_channel. The modification files are:</p>
+    <p>2.1 network_bridge.yaml:</p>
+    <img src="network_bridge_yaml2.png" alt="Example of the network">
+    <p>2.2 data_graph.yaml:</p>
+    <img src="network_bridge_yaml2.png" alt="Example of the data_graph">
+    <p>Note: The IP of the publisher should be set to the local address, while the IP of the subscriber should be set to the IP of the robot to be monitored.  </p>
+
+    <p> Once the parameters are set, the sending code is as follows:</p>
+
+    <h4>Publisher side    </h4>
+    <pre><code>// Example publisher
+int main() { 
+// 1. Initialize TROS 
+    tros::tros_base::TROSInit("../tests/data/param_file.yaml",
+                                "../tests/data/data_graph.yaml",
+                                "../tests/data/network_bridge.yaml", 0);
+// 2. Send 
+    std::shared_ptr<PreData>pre_data = std::make_shared<PreData>(5);
+    tros::tros_base::ToAny("pre_channel", pre_data);
+
+// 3. Automatically ends after 50s; can also use a while loop to wait.
+    std::this_thread::sleep_for(std::chrono::seconds(50));
+    tros::tros_base::NetworkBridge::Instance().Stop();
+}
+    </code></pre>
+
+    <h4>ESubscriber side:    </h4>
+    <pre><code>// 1. Initialize TROS 
+    tros::tros_base::TROSInit("../tests/data/param_file.yaml",
+                            "../tests/data/data_graph.yaml",
+                            "../tests/data/network_bridge.yaml", 0);
+                        
+// 2. Subscribe; note that the template after FromAny here is `PreData`, not `std::shared_ptr<PreData>`.
+    tros_base::FromAny<PreData>("pre_channel", tros_base::kParallelInvoke,
+                                [this](const std::shared_ptr<PreData>& pre_data) {
+                                    std::cout << pre_data->num();
+                                    // run algorithm, return a ba_data
+                                    // ba_data_ = ba_data; // can save to a local variable before sending
+                                });
+
+// 3. Once processing is done, you can send
+    tros::tros_base::ToAny("ba_channel", ba_data_);
+
+// 3. Automatically ends after 50s; can also use a while loop to wait.
+    std::this_thread::sleep_for(std::chrono::seconds(50));
+    tros::tros_base::NetworkBridge::Instance().Stop();
+    </code></pre>
+
+    <h3>Notes</h3>
+    <ul>
+        <li><code>ToGraph</code>/<code>FromGraph</code> uses <code>shared_ptr</code> for efficiency.</li>
+        <li><code>ToAny</code>/<code>FromAny</code> requires data structures to inherit from <code>NetworkData</code> or just created from <code>proto</code>.</li>
+    </ul>
+
+    <h3> 4.2 ToAny/FromAny datastructure requirement:</h3>
+    <h4> 4.2.1 The first method is inheritance, and its approach is as follows: <h4>
+    <p> NetworkData is defined as follows (belonging to a class predefined by tros): </p>
+    <pre><code>namespace tros_base { 
+ namespace tros { 
+
+ struct NetworkData { 
+   /** 
+    * @brief basic header, for multi robot use 
+    * 
+    */ 
+   common::Header header; 
+
+
+   /** 
+    * @brief for consistency 
+    * 
+    * @return common::Header 
+    */ 
+   common::Header* mutable_header() { return &header; } 
+
+
+   /** 
+    * @brief follow google protobuf style 
+    * 
+    * @param output Serialized Data 
+    * @return true 
+    * @return false 
+    */ 
+   virtual bool SerializeToString(std::string* output) = 0; 
+
+
+   /** 
+    * @brief follow google protobuf style 
+    * 
+    * @param data struct data 
+    * @return true 
+    * @return false 
+    */ 
+   virtual bool ParseFromString(const std::string& data) = 0; 
+ }; 
+
+
+ }  // namespace tros_base 
+ }  // namespace tros 
+    </code></pre>
+
+    <p> Serialization and deserialization refer to serializing a data structure into std::string and restoring a data structure from std::string. Using TFFrame as an example, the definitions of ba_data and pre_data can refer to this achievement.        : </p>
+
+    <p> First, define a proto file for Serialization(optional): <p>
+    <pre><code> message TransformationFrame { 
+   uint64 time_stamp = 1; 
+   string parent_frame = 2; 
+   string now_frame = 3; 
+   repeated float tf_to_parent = 4; 
+ } 
+    </code></pre>
+    <p> Then define network data operations through inheritance: </p>
+    <pre><code> struct TransformationFrame : public NetworkData { 
+   uint64_t time_stamp; 
+   std::string parent_frame; 
+   std::string now_frame; 
+   Eigen::Isometry3d tf_to_parent; 
+
+
+   TransformationFrame() {} 
+
+
+   TransformationFrame(uint64_t time_stamp_in, 
+                       const std::string& parent_frame_in, 
+                       const std::string& now_frame_in, 
+                       const Eigen::Isometry3d& tf_to_parent_in) 
+       : time_stamp(time_stamp_in), 
+         parent_frame(parent_frame_in), 
+         now_frame(now_frame_in), 
+         tf_to_parent(tf_to_parent_in) {} 
+
+
+   ~TransformationFrame() {} 
+
+
+   bool SerializeToString(std::string* output) override { 
+     if (!output) { 
+       return false; 
+     } 
+     geometry::TransformationFrame tf_frame; 
+     tf_frame.set_time_stamp(time_stamp); 
+     tf_frame.set_parent_frame(parent_frame); 
+     tf_frame.set_now_frame(now_frame); 
+
+
+     // Convert Eigen::Isometry3d to repeated float 
+     Eigen::Matrix4d matrix = tf_to_parent.matrix(); 
+     for (int i = 0; i < 4; ++i) { 
+       for (int j = 0; j < 4; ++j) { 
+         tf_frame.add_tf_to_parent(matrix(i, j)); 
+       } 
+     } 
+
+
+     return tf_frame.SerializeToString(output); 
+   } 
+
+
+   bool ParseFromString(const std::string& data) override { 
+     geometry::TransformationFrame tf_frame; 
+     if (!tf_frame.ParseFromString(data)) { 
+       return false; 
+     } 
+
+
+     time_stamp = tf_frame.time_stamp(); 
+     parent_frame = tf_frame.parent_frame(); 
+     now_frame = tf_frame.now_frame(); 
+
+
+     if (tf_frame.tf_to_parent_size() != 16) { 
+       return false; 
+     } 
+
+
+     Eigen::Matrix4d matrix; 
+     for (int i = 0; i < 4; ++i) { 
+       for (int j = 0; j < 4; ++j) { 
+         matrix(i, j) = tf_frame.tf_to_parent(i * 4 + j); 
+       } 
+     } 
+     tf_to_parent.matrix() = matrix; 
+
+
+     return true; 
+   } 
+ }; 
+    </code></pre>
+    <p> Thus,  TransformationFrame  can be sent using ToAny.  </p>
+
+    <h4>4.2.2 The second method is to directly define the proto's message (recommend):   </h4>
+    <p> For instance, I defined two messages in the proto file and adding common.Header (from tros headers) to position 1: </p>
+    <pre><code> import "common.proto"; 
+ message BAData { 
+     common.Header header = 1;  // must 
+     int num = 2; // 序号为2 
+ } 
+ message PreData { 
+     common.Header header = 1;  // must 
+     int num = 2; // index = 2 
+ } 
+    </code></pre>
+    <p> Using the proto_compiler, you can generate two classes:  BAData  and  PreData .    </p>
+    <p> With this, we can directly use  ToAny  to send them. But note: the send and subscribe should be in the format of the corresponding class's  shared_ptr , such as  shared_ptr<BAData> .  </p>
+        
+
+    <h2>5. Dynamic Computational Network Configuration</h2>
+    <p>To enable or disable specific communication channels dynamically in run time, following the below steps:</p>
+
+    <h3>5.1 Disable Local Message Sending</h3>
+    <pre><code>tros::tros_base::SetCloseChannel("shared_channel", false);
+    </code></pre>
+
+    <h3>5.2 Disable Cloud-Based Message Sending</h3>
+    <pre><code>tros::tros_base::NetworkBridge::Instance().ConfigPublishChannel("scene_channel", false);
+    </code></pre>
+
+    <h3>5.3 Enable or Disable Subscription</h3>
+    <pre><code>tros::tros_base::NetworkBridge::Instance().ConfigSubscribeChannel("scene_channel", 0, false);
+    </code></pre>
+
+    <p>This ensures flexibility in computational network communication.</p>
+
+</body>
+</html>
