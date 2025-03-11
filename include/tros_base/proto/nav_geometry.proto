@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+import "common.proto";
+
+package tros.tros_base.nav_geometry;
+
+message Position {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+message Orientation {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+  double w = 4; // 四元数的第四个分量
+}
+
+message Pose {
+  Position position = 1;
+  Orientation orientation = 2;
+}
+
+message PoseArray {
+    common.Header header = 1;
+    repeated Pose poses = 2;
+}

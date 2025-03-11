@@ -1,0 +1,78 @@
+profile:
+  name: wujiazheng
+  sex: male
+  car_id:
+    level1: 122
+    level2: 233
+
+sensor: imu
+
+author: wujiazheng
+
+# mark @ is not support now but will support in the future
+general:
+  run_mode: simulation #simulation, @real_time
+  slam_mode: stereo  #mono, stereo, @rgbd
+  need_imu: true
+
+simulation:
+  data_set_use: euroc #euroc, @kitti, @tum
+  euroc_data_set:
+    input_file_path:
+      imu0_file_path: ../data_set/euroc/MH01/mav0/imu0/data.csv
+      cam0_indexing_path: ../data_set/euroc/MH01/mav0/cam0/data.csv
+      cam0_dir_path: ../data_set/euroc/MH01/mav0/cam0/data/
+      cam1_indexing_path: ../data_set/euroc/MH01/mav0/cam1/data.csv
+      cam1_dir_path: ../data_set/euroc/MH01/mav0/cam1/data/
+      ground_truth_file_path: ../data_set/euroc/MH01/mav0/state_groundtruth_estimate0/data.csv
+  publish_check_frequency_us:
+    imu0: 100
+    cam0: 1000
+    cam1: 1000
+    ground_truth: 1000
+
+sensor_related:
+  sensor_config_path: ../config/euroc_sensor_config.yaml
+
+perception:
+  pre_process:
+    median_filter_kernel_size: 3
+  feature_extractor:
+    descriptor_type: "sift"
+    sift_param:
+      nfeatures: 1000
+      nOctaveLayers: 3
+      contrastThreshold: 0.03
+      edgeThreshold: 10
+      sigma: 1.6
+
+slam:
+  matcher:
+    matcher_type: NORM_HAMMING #NORM_L1, NORM_L2, NORM_L2SQR, NORM_HAMMING, NORM_HAMMING2
+    cross_check: false
+    first_second_times: 0.75
+    max_distance: 400
+    first_second_times_3d: 0.75
+    max_distance_3d: 800
+    x_sigma_factor: 1.5
+    y_sigma_factor: 3.0
+    stereo_match: true
+  keyframe:
+    min_translation_diff: 0.2 #m
+    min_angle_deg_diff: 15.0 #deg
+  reconstruction:
+    max_reproject_error: 10
+    min_depth: 0.05
+    max_depth: 100.0
+    triangulate_method: SVD #SVD, CV
+  point_cloud_fusion:
+    min_distance: 0.2
+  tracking:
+    get_k_top_frame: 100
+  pnp:
+    min_matches_require: 30
+    use_initial_guess: false
+    max_iterative_times: 500
+    reproject_error_threshold: 8.0
+    confidence_threshold: 0.99
+    min_inliers_count: 6

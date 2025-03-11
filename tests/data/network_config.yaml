@@ -1,0 +1,16 @@
+network:
+  publisher:
+    ip: "*:5556"
+    channels:
+      - "tf_channel"
+      - "scene_channel"
+
+  subscribers:
+    - ip: "tcp://192.168.10.5:5556"
+      channels:
+        - "tf_channel"
+        - "scene_channel"
+    - ip: "tcp://192.168.10.6:5556"
+      channels:
+        - "tf_channel"
+        - "scene_channel"

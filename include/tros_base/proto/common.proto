@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package tros.tros_base.common;
+
+message Header {
+  uint64 time_stamp = 1;
+  string channel_name = 2;
+  string agent_name = 3;
+}

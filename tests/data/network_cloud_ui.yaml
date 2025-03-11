@@ -1,0 +1,15 @@
+network:
+  publisher:
+    ip: "tcp://*:5553"
+    channels:
+      - tf_channel
+      - scene_channel
+      - occupany_grid_channel
+      - occupany_voxel_channel
+  subscribers:
+    - ip: "x"
+      channels:
+        - tf_channel
+        - scene_channel
+        - occupany_grid_channel
+        - occupany_voxel_channel

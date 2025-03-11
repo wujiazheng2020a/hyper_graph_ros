@@ -1,0 +1,11 @@
+network:
+  publisher:
+    ip: "tcp://*:5554"
+    channels:
+      - tf_channel
+      - scene_channel
+  subscribers:
+    - ip: "tcp://localhost:5555"
+      channels:
+        - tf_channel
+        - scene_channel

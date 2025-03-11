@@ -1,0 +1,4 @@
+data_graph:
+  close_channels:
+    - "A_channl"
+    - "B_channl"

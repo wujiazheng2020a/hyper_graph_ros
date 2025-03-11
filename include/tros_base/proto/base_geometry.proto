@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+import "common.proto";
+
+package tros.tros_base.geometry;
+
+message Point {
+  repeated float data = 1; // (x, y, z) -> (data[0], data[1], data[2])
+  float width = 2;
+}
+
+message PointCloud {
+  repeated Point points = 1;
+}
+
+message Line {
+  repeated Point points = 1;
+  float width = 2;
+}
+
+message Polygen {
+  repeated Point points = 1; // edges point of face
+}
+
+message Oval {
+  float a = 1;
+  float b = 2;
+}
+
+message Sphere {
+  float a = 1;
+  float b = 2;
+  float c = 3;
+}
+
+message Cone {
+  oneof surface_type {
+    Oval oval = 1;
+    Polygen polygen = 2;
+  }
+  uint64 height = 3;
+}
+
+message Extrusion {
+  oneof surface_type {
+    Oval oval = 1;
+    Polygen polygen = 2;
+  }
+  uint64 height = 3;
+}
+
+message TransformationFrame {
+  uint64 time_stamp = 1;
+  string parent_frame = 2;
+  string now_frame = 3;
+  repeated float tf_to_parent = 4;
+}
+
+message Shape {
+  oneof type {
+    Point point = 1;
+    PointCloud point_cloud = 2;
+    Line line = 3;
+    Polygen polygen = 4;
+    Oval oval = 5;
+    Sphere sphere = 6;
+    Cone cone = 7;
+    Extrusion extrusion = 8;
+  }
+  float apparent= 9;  // 0 -1
+  repeated float color_rgb = 10; // [r,g,b] range: 0-1.
+  TransformationFrame transformation_frame = 11; // tf from shape_frame to parent_frame
+  string name = 12; // for exp: parkspace, pillar
+}
+
+message Scene {
+  common.Header header = 1;
+  repeated Shape shapes = 2; // multiple shapes
+}

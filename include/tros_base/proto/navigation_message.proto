@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+import "common.proto";
+import "base_geometry.proto";
+
+package tros.tros_base.navigation;
+
+message OccupancyGrid {
+  double resolution = 1;
+  uint64 width = 2;
+  uint64 height = 3;
+  bytes data = 4;  //row major  index = y*width + x
+}
+
+message OccupancyVoxel {
+  double resolution = 1;
+  uint64 x_width = 2;
+  uint64 y_width = 3;
+  uint64 z_width = 4;
+  bytes data = 5;  // index = x + y*x_width + z*x_width*y_width
+}
+
+message NavigationMsg {
+  common.Header header = 1;
+  oneof type {
+    OccupancyGrid occupancy_grid= 2;
+    OccupancyVoxel occupancy_voxel = 3;
+  }
+  geometry.TransformationFrame transformation_frame = 4;
+}
