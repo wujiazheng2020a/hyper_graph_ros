@@ -47,7 +47,7 @@ sudo make install
 
 ### 3.3 TROS Installation
 ```bash
-git clone git@github.com:wujiazheng2020/tros.git
+git clone https://github.com/wujiazheng2020a/hyper_graph_ros.git
 ```
 #### 3.3.1 Navigate to the project folder
 ```bash
